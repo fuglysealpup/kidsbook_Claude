@@ -1,8 +1,13 @@
 (() => {
 const $ = (id) => document.getElementById(id);
 const BGS = ["sky", "meadow", "sunset", "night", "sea", "sand", "blossom"];
-const DEFAULTS = { name: "", age: "3", interests: "", include: "", exclude: "", phonetic: "pinyin", length: "8", pictures: "on", passcode: "" };
+const DEFAULTS = { boost: "0", name: "", age: "3", interests: "", include: "", exclude: "", phonetic: "pinyin", length: "8", pictures: "on", passcode: "" };
 const DRAW_AT_ONCE = 3;
+// Mirrors LEVELS in api/story.js: the child's age sets a starting level and "Story level" nudges it.
+const LEVEL_NAMES = [null, "first words", "simple pattern", "little story", "growing story", "chatty story", "big-kid story", "early reader", "stretch"];
+const LEVEL_SHAPE = [null, "a tiny repeating sentence per page", "one short sentence per page", "one or two sentences per page", "two or three sentences per page", "two to four sentences per page", "three to five sentences per page", "a short paragraph per page", "a full paragraph per page"];
+const MAX_LEVEL = LEVEL_NAMES.length - 1;
+const levelFor = (age, boost) => Math.min(MAX_LEVEL, Math.max(1, (Math.min(8, Math.max(2, Number(age) || 3)) - 1) + (Number(boost) || 0)));
 
 const SAMPLE = {
   id: "sample", sample: true, createdAt: "2026-10-05T00:00:00Z",
@@ -88,7 +93,8 @@ function readForm() {
     name: $("s-name").value.trim(), age: $("s-age").value, interests: $("s-interests").value.trim(),
     include: $("s-include").value.trim(), exclude: $("s-exclude").value.trim(),
     phonetic: document.querySelector('input[name="phon"]:checked').value, length: $("s-length").value,
-    pictures: $("s-pictures").value, passcode: $("s-passcode").value.trim()
+    pictures: $("s-pictures").value, passcode: $("s-passcode").value.trim(),
+    boost: (document.querySelector('input[name="boost"]:checked') || {}).value || "0"
   };
 }
 function fillForm(s) {
@@ -96,6 +102,7 @@ function fillForm(s) {
   $("s-include").value = s.include; $("s-exclude").value = s.exclude; $("s-length").value = s.length;
   $("s-pictures").value = s.pictures; $("s-passcode").value = s.passcode;
   $(s.phonetic === "zhuyin" ? "phon-zhuyin" : "phon-pinyin").checked = true;
+  const b = $("boost-" + String(s.boost).replace("-", "m")); if (b) b.checked = true;
   renderSummary();
 }
 function renderSummary() {
@@ -107,7 +114,13 @@ function renderSummary() {
   bits.push(`${s.length} pages`);
   bits.push(s.pictures === "on" ? "with pictures" : "emoji only");
   $("settings-summary").textContent = bits.join(" · ") + ". Change these under About your child.";
+  const lv = levelFor(s.age, s.boost);
+  $("level-hint").textContent = `Level ${lv} of ${MAX_LEVEL}, ${LEVEL_NAMES[lv]}: ${LEVEL_SHAPE[lv]}.`;
 }
+document.querySelectorAll('input[name="boost"]').forEach((r) => r.addEventListener("change", () => {
+  settings.boost = r.value; local.set("sw-settings", settings); renderSummary();
+}));
+$("s-age").addEventListener("change", () => { settings.age = $("s-age").value; renderSummary(); });
 $("save-settings").addEventListener("click", () => {
   settings = readForm(); local.set("sw-settings", settings); renderSummary();
   $("settings-status").textContent = "Saved";
@@ -217,7 +230,7 @@ async function drawOne(story, idx) {
   if (drawing.has(key)) return true;
   drawing.add(key); refreshReader(story, idx);
   try {
-    const { image } = await api("/api/image", { scene: sceneFor(story, idx), style: story.style, characters: story.characters });
+    const { image } = await api("/api/image", { scene: sceneFor(story, idx), style: story.style, characters: story.characters, age: story.age });
     if (idx === 0) story.coverImage = image; else story.pages[idx - 1].image = image;
     await idb.put(story).catch(() => {});
     return true;
@@ -266,7 +279,7 @@ function renderShelf() {
     const meta = document.createElement("div"); meta.className = "meta";
     const t = document.createElement("div"); t.className = "t"; t.lang = "zh-Hant"; t.textContent = st.title;
     const te = document.createElement("div"); te.className = "te"; te.textContent = st.titleEn;
-    const d = document.createElement("div"); d.className = "d"; d.textContent = st.sample ? "Example story" : fmtDate(st.createdAt);
+    const d = document.createElement("div"); d.className = "d"; d.textContent = st.sample ? "Example story" : fmtDate(st.createdAt) + (st.level ? ` · Level ${st.level}` : "");
     meta.append(t, te, d); b.append(cover, meta);
     if (st.sample) { const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "Example"; b.append(tag); }
     b.addEventListener("click", () => openBook(st));

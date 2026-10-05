@@ -5,11 +5,12 @@ const QUALITY = process.env.OPENAI_IMAGE_QUALITY || "medium";
 
 export default async function handler(req, res) {
   if (!requirePost(req, res) || !checkPasscode(req, res)) return;
-  const { scene, style, characters } = req.body || {};
+  const { scene, style, characters, age } = req.body || {};
+  const years = Math.min(8, Math.max(2, Number(age) || 3));
   if (typeof scene !== "string" || !scene.trim()) return res.status(400).json({ error: "bad_request", message: "Missing scene." });
 
   const prompt = [
-    "A full-bleed illustration for a picture book for a three-year-old.",
+    `A full-bleed illustration for a picture book for a ${years}-year-old.`,
     `Art style: ${String(style || "soft watercolor and colored pencil, warm gentle colors, rounded friendly shapes, simple uncluttered background").slice(0, 400)}.`,
     characters ? `Recurring characters (keep them looking exactly like this): ${String(characters).slice(0, 800)}.` : "",
     `This page shows: ${scene.slice(0, 800)}.`,

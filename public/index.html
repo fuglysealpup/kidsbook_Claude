@@ -37,6 +37,16 @@
       <label for="lesson-text">Lesson text</label>
       <textarea id="lesson-text" placeholder="The newsletter text shows up here after you add a PDF. You can also paste it in, or trim out anything that isn't about the lesson."></textarea>
     </div>
+    <div class="field">
+      <span class="hint" id="level-l" style="font-weight:700;color:var(--ink)">Story level</span>
+      <div class="seg level-seg" role="radiogroup" aria-labelledby="level-l">
+        <input type="radio" name="boost" id="boost-m1" value="-1"><label for="boost-m1">Easier</label>
+        <input type="radio" name="boost" id="boost-0" value="0" checked><label for="boost-0">Right for age</label>
+        <input type="radio" name="boost" id="boost-1" value="1"><label for="boost-1">Harder</label>
+        <input type="radio" name="boost" id="boost-2" value="2"><label for="boost-2">Much harder</label>
+      </div>
+      <p class="hint" id="level-hint"></p>
+    </div>
     <p class="summary-line" id="settings-summary"></p>
     <div class="row">
       <button class="primary" id="generate" type="button">Write the story</button>
@@ -55,7 +65,7 @@
         <div class="grid2">
           <div class="field"><label for="s-name">Name in the story</label><input type="text" id="s-name" placeholder="e.g. Mia or 米亞"></div>
           <div class="field"><label for="s-age">Age</label>
-            <select id="s-age"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+            <select id="s-age"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
         </div>
         <div class="field"><label for="s-interests">Favorite things</label><input type="text" id="s-interests" placeholder="e.g. dinosaurs, trains, our dog Mochi, bubbles"></div>
         <div class="grid2">

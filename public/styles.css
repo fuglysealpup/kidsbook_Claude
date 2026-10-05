@@ -133,3 +133,6 @@ details.settings[open]>summary .chev .closed,details.settings:not([open])>summar
 .progress{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden}
 .progress i{display:block;height:100%;width:0;background:var(--jade);transition:width .3s}
 @media (max-width:460px){.r-bar .r-title{visibility:hidden}}
+.level-seg{display:grid;grid-template-columns:repeat(4,1fr);border-radius:14px;max-width:100%}
+.level-seg label{text-align:center;padding:9px 6px}
+@media (max-width:480px){.level-seg{grid-template-columns:repeat(2,1fr)}}
