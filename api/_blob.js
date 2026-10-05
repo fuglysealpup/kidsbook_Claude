@@ -77,6 +77,7 @@ export async function saveBook(story) {
   story.coverImage = await moveDataUrl(dir, "0", story.coverImage);
   for (let i = 0; i < story.pages.length; i++) story.pages[i].image = await moveDataUrl(dir, String(i + 1), story.pages[i].image);
   if (story.hero?.sheet) story.hero.sheet = await moveDataUrl(dir, "hero", story.hero.sheet);
+  if (story.castSheet) story.castSheet = await moveDataUrl(dir, "cast", story.castSheet);
   await replaceJson(`${dir}/story-`, `${dir}/story.json`, story);
   return story;
 }

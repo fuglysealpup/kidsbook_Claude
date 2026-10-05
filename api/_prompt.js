@@ -57,6 +57,7 @@ function heroRules(s) {
   } else {
     lines.push(`- "characters": an English visual description of every recurring character (species or look, colors, clothing) so an illustrator draws them the same way on every page.${name ? " If the hero is the child, describe a cheerful cartoon child without real-person details." : ""}`);
   }
+  lines.push(`- "supporting": an English visual description of every recurring character other than ${name || "the hero"}, one sentence each: name, species or look, body and hair colors, and ONE fixed outfit with exact colors (for example "Mochi, a small round white puppy with floppy ears and a red collar"). They wear that same outfit on every page. Use "" when there are no other recurring characters.`);
   lines.push(`- "style" must be exactly: ${clip(s.style, 300) || DEFAULT_STYLE}`);
   lines.push(`- Each page's "illustration": one or two English sentences describing what the picture shows. No text or signs in the picture.`);
   lines.push(`- Each page's "hero": true when ${name || "the hero"} appears in that page's picture, otherwise false.`);
@@ -66,7 +67,7 @@ function heroRules(s) {
 function jsonShape(s) {
   const mode = phonMode(s);
   const ex = (zh, py) => (mode === "none" ? "" : mode === "zhuyin" ? zh : py);
-  return `{"title":"小兔子買水果","titlePhon":"${ex("ㄒㄧㄠˇ ㄊㄨˋ ˙ㄗ ㄇㄞˇ ㄕㄨㄟˇ ㄍㄨㄛˇ", "xiǎo tù zi mǎi shuǐ guǒ")}","titleEn":"Little Bunny Buys Fruit","cover":"🐰","coverIllustration":"…","bg":"meadow","style":"…","characters":"…","pages":[{"zh":"…","phon":"${mode === "none" ? "" : "…"}","en":"…","illustration":"…","hero":true,"scene":["🍎","🐰"],"bg":"sky"}],"words":[{"zh":"蘋果","phon":"${ex("ㄆㄧㄥˊ ㄍㄨㄛˇ", "píng guǒ")}","en":"apple","emoji":"🍎"}]}`;
+  return `{"title":"小兔子買水果","titlePhon":"${ex("ㄒㄧㄠˇ ㄊㄨˋ ˙ㄗ ㄇㄞˇ ㄕㄨㄟˇ ㄍㄨㄛˇ", "xiǎo tù zi mǎi shuǐ guǒ")}","titleEn":"Little Bunny Buys Fruit","cover":"🐰","coverIllustration":"…","bg":"meadow","style":"…","characters":"…","supporting":"…","pages":[{"zh":"…","phon":"${mode === "none" ? "" : "…"}","en":"…","illustration":"…","hero":true,"scene":["🍎","🐰"],"bg":"sky"}],"words":[{"zh":"蘋果","phon":"${ex("ㄆㄧㄥˊ ㄍㄨㄛˇ", "píng guǒ")}","en":"apple","emoji":"🍎"}]}`;
 }
 
 function childBlock(s) {
@@ -156,8 +157,8 @@ Reply with only JSON: {"pages":[{"i":0,"phon":"…","en":"…","illustration":"�
 }
 
 function storyForModel(story) {
-  const { title, titlePhon, titleEn, cover, coverIllustration, bg, style, characters, pages, words } = story;
-  return { title, titlePhon, titleEn, cover, coverIllustration, bg, style, characters,
+  const { title, titlePhon, titleEn, cover, coverIllustration, bg, style, characters, supporting, pages, words } = story;
+  return { title, titlePhon, titleEn, cover, coverIllustration, bg, style, characters, supporting,
     pages: (pages || []).map(({ zh, phon, en, illustration, hero, scene, bg }) => ({ zh, phon, en, illustration, hero, scene, bg })), words };
 }
 
@@ -171,7 +172,7 @@ export function clean(story, s) {
   return {
     title: str(story.title) || "這週的故事", titlePhon: none ? "" : str(story.titlePhon), titleEn: str(story.titleEn) || "This week's story",
     cover: str(story.cover) || "📖", coverIllustration: str(story.coverIllustration), bg: bg(story.bg),
-    style: str(story.style) || clip(s.style, 300) || DEFAULT_STYLE, characters: str(story.characters),
+    style: str(story.style) || clip(s.style, 300) || DEFAULT_STYLE, characters: str(story.characters), supporting: str(story.supporting),
     pages: story.pages.filter((p) => p && str(p.zh)).slice(0, 14).map((p) => ({
       zh: str(p.zh), phon: none ? "" : str(p.phon), en: str(p.en), illustration: str(p.illustration), hero: p.hero !== false,
       scene: (Array.isArray(p.scene) ? p.scene : []).map(str).filter(Boolean).slice(0, 4), bg: bg(p.bg)
