@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#177F69">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Story Week">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>Story Week 週週故事</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&family=LXGW+WenKai+TC:wght@400;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Story Week<span class="zh">週週故事</span></h1>
+    <p>Drop in this week's class newsletter and get a short illustrated picture book in Traditional Chinese and English, built from what the teacher taught.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="make-h">
+    <div class="panel-head">
+      <h2 id="make-h">Make this week's story</h2>
+    </div>
+    <label class="drop" id="drop" for="lesson-file">
+      <span class="big">Add the newsletter PDF</span>
+      <span class="hint">Tap to choose a file, or drop it here. A photo or screenshot of the page works too.</span>
+      <input type="file" id="lesson-file" accept="application/pdf,image/*">
+    </label>
+    <p class="file-note" id="file-note" hidden></p>
+    <div class="field">
+      <label for="lesson-text">Lesson text</label>
+      <textarea id="lesson-text" placeholder="The newsletter text shows up here after you add a PDF. You can also paste it in, or trim out anything that isn't about the lesson."></textarea>
+    </div>
+    <p class="summary-line" id="settings-summary"></p>
+    <div class="row">
+      <button class="primary" id="generate" type="button">Write the story</button>
+    </div>
+    <div class="progress" id="progress" hidden><i></i></div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="kid-h">
+    <details class="settings" id="settings-details">
+      <summary>
+        <h2 id="kid-h">About your child</h2>
+        <span class="chev"><span class="closed">Edit</span><span class="open">Close</span></span>
+      </summary>
+      <div class="settings-body">
+        <div class="grid2">
+          <div class="field"><label for="s-name">Name in the story</label><input type="text" id="s-name" placeholder="e.g. Mia or 米亞"></div>
+          <div class="field"><label for="s-age">Age</label>
+            <select id="s-age"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+        </div>
+        <div class="field"><label for="s-interests">Favorite things</label><input type="text" id="s-interests" placeholder="e.g. dinosaurs, trains, our dog Mochi, bubbles"></div>
+        <div class="grid2">
+          <div class="field"><label for="s-include">Try to include</label><input type="text" id="s-include" placeholder="e.g. grandma, our neighborhood park"></div>
+          <div class="field"><label for="s-exclude">Leave out</label><input type="text" id="s-exclude" placeholder="e.g. monsters, the dark, candy"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><span class="hint" id="phon-l" style="font-weight:700;color:var(--ink)">Sound guide</span>
+            <div class="seg" role="radiogroup" aria-labelledby="phon-l">
+              <input type="radio" name="phon" id="phon-pinyin" value="pinyin" checked><label for="phon-pinyin">Pinyin</label>
+              <input type="radio" name="phon" id="phon-zhuyin" value="zhuyin"><label for="phon-zhuyin">注音</label>
+            </div></div>
+          <div class="field"><label for="s-length">Story length</label>
+            <select id="s-length"><option value="6">Short (6 pages)</option><option value="8" selected>Medium (8 pages)</option><option value="10">Long (10 pages)</option></select></div>
+        </div>
+        <div class="field"><label for="s-pictures">Pictures</label>
+          <select id="s-pictures"><option value="on" selected>Draw a picture for every page</option><option value="off">Emoji only (faster, free)</option></select></div>
+        <div class="field"><label for="s-passcode">App passcode</label><input type="text" id="s-passcode" autocomplete="off" placeholder="The APP_PASSCODE you set when hosting"></div>
+        <p class="hint">All Chinese text is written in Traditional characters (繁體). Everything here is saved on this device.</p>
+        <div class="row"><button class="primary" id="save-settings" type="button">Save</button><span class="status" id="settings-status" role="status"></span></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="shelf-h">
+    <div class="panel-head"><h2 id="shelf-h">Bookshelf</h2><span class="eyebrow" id="shelf-count"></span></div>
+    <div class="shelf" id="shelf"></div>
+    <p class="empty" id="shelf-note"></p>
+  </section>
+</div>
+
+<div id="reader" hidden role="dialog" aria-modal="true" aria-labelledby="r-title">
+  <div class="r-bar">
+    <button type="button" id="r-close" aria-label="Close book">✕ Close</button>
+    <div class="r-title" id="r-title"></div>
+    <button type="button" id="r-phon" aria-pressed="true">拼音</button>
+    <button type="button" id="r-en" aria-pressed="true">EN</button>
+    <button type="button" id="r-redraw" aria-label="Draw this page's picture again">🎨</button>
+    <button type="button" id="r-say" aria-label="Read this page aloud">🔊 Read</button>
+  </div>
+  <div class="stage" id="stage"></div>
+  <div class="r-nav">
+    <button type="button" id="r-prev">‹ Back</button>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <button type="button" id="r-next">Next ›</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
