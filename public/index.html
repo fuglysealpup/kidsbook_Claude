@@ -17,79 +17,36 @@
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
+
+<!-- Sign in (Google / Apple, or the app passcode) -->
+<div class="signin" id="signin" hidden>
+  <div class="card">
     <h1>Story Week<span class="zh">週週故事</span></h1>
-    <p>Drop in this week's class newsletter and get a short illustrated picture book in Traditional Chinese and English, built from what the teacher taught.</p>
+    <p class="lede" id="signin-lede">Sign in to see your family's bookshelf.</p>
+    <div id="google-btn"></div>
+    <button type="button" class="apple-btn" id="apple-btn" hidden> Sign in with Apple</button>
+    <div class="field" id="passcode-box" hidden style="width:100%;text-align:left">
+      <label for="passcode-in">App passcode</label>
+      <input type="text" id="passcode-in" autocomplete="off">
+      <button type="button" class="primary" id="passcode-go">Continue</button>
+    </div>
+    <p class="status" id="signin-status" role="status"></p>
+  </div>
+</div>
+
+<!-- Home -->
+<div class="wrap" id="home" hidden>
+  <header class="appbar">
+    <h1>Story Week<span class="zh">週週故事</span></h1>
+    <button type="button" class="chip" id="profile-chip" aria-label="Your child's settings"><span class="avatar" id="chip-avatar">🧒</span><span id="chip-name">Set up</span></button>
   </header>
 
-  <section class="panel" aria-labelledby="make-h">
-    <div class="panel-head">
-      <h2 id="make-h">Make this week's story</h2>
-    </div>
-    <label class="drop" id="drop" for="lesson-file">
-      <span class="big">Add the newsletter PDF</span>
-      <span class="hint">Tap to choose a file, or drop it here. A photo or screenshot of the page works too.</span>
-      <input type="file" id="lesson-file" accept="application/pdf,image/*">
-    </label>
-    <p class="file-note" id="file-note" hidden></p>
-    <div class="field">
-      <label for="lesson-text">Lesson text</label>
-      <textarea id="lesson-text" placeholder="The newsletter text shows up here after you add a PDF. You can also paste it in, or trim out anything that isn't about the lesson."></textarea>
-    </div>
-    <div class="field">
-      <span class="hint" id="level-l" style="font-weight:700;color:var(--ink)">Story level</span>
-      <div class="seg level-seg" role="radiogroup" aria-labelledby="level-l">
-        <input type="radio" name="boost" id="boost-m1" value="-1"><label for="boost-m1">Easier</label>
-        <input type="radio" name="boost" id="boost-0" value="0" checked><label for="boost-0">Right for age</label>
-        <input type="radio" name="boost" id="boost-1" value="1"><label for="boost-1">Harder</label>
-        <input type="radio" name="boost" id="boost-2" value="2"><label for="boost-2">Much harder</label>
-      </div>
-      <p class="hint" id="level-hint"></p>
-    </div>
-    <p class="summary-line" id="settings-summary"></p>
-    <div class="row">
-      <button class="primary" id="generate" type="button">Write the story</button>
-    </div>
-    <div class="progress" id="progress" hidden><i></i></div>
-    <p class="status" id="status" role="status" aria-live="polite"></p>
-  </section>
+  <div id="inbox"></div>
 
-  <section class="panel" aria-labelledby="kid-h">
-    <details class="settings" id="settings-details">
-      <summary>
-        <h2 id="kid-h">About your child</h2>
-        <span class="chev"><span class="closed">Edit</span><span class="open">Close</span></span>
-      </summary>
-      <div class="settings-body">
-        <div class="grid2">
-          <div class="field"><label for="s-name">Name in the story</label><input type="text" id="s-name" placeholder="e.g. Mia or 米亞"></div>
-          <div class="field"><label for="s-age">Age</label>
-            <select id="s-age"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
-        </div>
-        <div class="field"><label for="s-interests">Favorite things</label><input type="text" id="s-interests" placeholder="e.g. dinosaurs, trains, our dog Mochi, bubbles"></div>
-        <div class="grid2">
-          <div class="field"><label for="s-include">Try to include</label><input type="text" id="s-include" placeholder="e.g. grandma, our neighborhood park"></div>
-          <div class="field"><label for="s-exclude">Leave out</label><input type="text" id="s-exclude" placeholder="e.g. monsters, the dark, candy"></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><span class="hint" id="phon-l" style="font-weight:700;color:var(--ink)">Sound guide</span>
-            <div class="seg" role="radiogroup" aria-labelledby="phon-l">
-              <input type="radio" name="phon" id="phon-pinyin" value="pinyin" checked><label for="phon-pinyin">Pinyin</label>
-              <input type="radio" name="phon" id="phon-zhuyin" value="zhuyin"><label for="phon-zhuyin">注音</label>
-              <input type="radio" name="phon" id="phon-none" value="none"><label for="phon-none">None</label>
-            </div></div>
-          <div class="field"><label for="s-length">Story length</label>
-            <select id="s-length"><option value="6">Short (6 pages)</option><option value="8" selected>Medium (8 pages)</option><option value="10">Long (10 pages)</option></select></div>
-        </div>
-        <div class="field"><label for="s-pictures">Pictures</label>
-          <select id="s-pictures"><option value="on" selected>Draw a picture for every page</option><option value="off">Emoji only (faster, free)</option></select></div>
-        <div class="field"><label for="s-passcode">App passcode</label><input type="text" id="s-passcode" autocomplete="off" placeholder="The APP_PASSCODE you set when hosting"></div>
-        <p class="hint">All Chinese text is written in Traditional characters (繁體). Everything here is saved on this device.</p>
-        <div class="row"><button class="primary" id="save-settings" type="button">Save</button><span class="status" id="settings-status" role="status"></span></div>
-      </div>
-    </details>
-  </section>
+  <button type="button" class="cta" id="make">
+    <span class="big">Make this week's story</span>
+    <span class="small">From the class newsletter: add it, check the story, then pictures</span>
+  </button>
 
   <section class="panel" aria-labelledby="shelf-h">
     <div class="panel-head"><h2 id="shelf-h">Bookshelf</h2><span class="eyebrow" id="shelf-count"></span></div>
@@ -98,6 +55,153 @@
   </section>
 </div>
 
+<!-- Child profile: first-time setup walks through it one part at a time; later it opens as one page -->
+<div class="sheet" id="profile" hidden role="dialog" aria-modal="true" aria-labelledby="profile-h">
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2 id="profile-h">Your child</h2>
+      <div class="steps" id="profile-steps" hidden></div>
+      <button type="button" class="ghost" id="profile-close">Close</button>
+    </div>
+
+    <section class="panel" data-step="1">
+      <div class="panel-head"><h2>About your child</h2></div>
+      <p class="lede" data-setup-only>These shape every story. You can change them any time.</p>
+      <div class="grid2">
+        <div class="field"><label for="s-name">Name in the story</label><input type="text" id="s-name" placeholder="e.g. Mia or 米亞"></div>
+        <div class="field"><label for="s-age">Age</label>
+          <select id="s-age"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
+      </div>
+      <div class="field"><label for="s-interests">Favorite things</label><input type="text" id="s-interests" placeholder="e.g. dinosaurs, trains, our dog Mochi, bubbles"></div>
+      <div class="grid2">
+        <div class="field"><label for="s-include">Try to include</label><input type="text" id="s-include" placeholder="e.g. grandma, our neighborhood park"></div>
+        <div class="field"><label for="s-exclude">Leave out</label><input type="text" id="s-exclude" placeholder="e.g. monsters, the dark, candy"></div>
+      </div>
+    </section>
+
+    <section class="panel" data-step="2">
+      <div class="panel-head"><h2>Your hero</h2></div>
+      <p class="lede">Draw your child once as a picture-book character. Every book reuses this drawing, so the hero looks the same each week.</p>
+      <div class="hero-card">
+        <div class="hero-sheet" id="hero-sheet"><span>No hero drawn yet</span></div>
+        <div class="field"><label for="s-hero">What does your hero look like?</label>
+          <textarea id="s-hero" placeholder="e.g. short black hair with bangs, round cheeks, loves her yellow raincoat and red boots"></textarea></div>
+        <div class="photo-pick">
+          <label class="ghost" for="s-photo" style="border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer">Add a photo (optional)</label>
+          <input type="file" id="s-photo" accept="image/*" hidden>
+          <img class="thumb" id="photo-thumb" alt="" hidden>
+          <span class="hint">Only used once to describe the look. It isn't saved.</span>
+        </div>
+        <div class="field"><label for="s-style">Art style</label>
+          <select id="s-style">
+            <option value="">Soft watercolor</option>
+            <option value="bold crayon and oil-pastel texture, bright cheerful colors, thick friendly outlines, simple backgrounds">Crayon</option>
+            <option value="cut-paper collage with visible paper textures, flat bright shapes, layered simple backgrounds">Paper cut-out</option>
+            <option value="soft rounded 3D clay look, pastel colors, gentle lighting, simple backgrounds">Soft clay</option>
+            <option value="clean flat vector shapes, warm pastel palette, minimal backgrounds, rounded friendly characters">Flat pastel</option>
+          </select></div>
+        <div class="row"><button type="button" class="primary" id="hero-go">Draw my hero</button><span class="status" id="hero-status" role="status"></span></div>
+      </div>
+    </section>
+
+    <section class="panel" data-step="3">
+      <div class="panel-head"><h2>Reading</h2></div>
+      <div class="grid2">
+        <div class="field"><span class="hint" id="phon-l" style="font-weight:700;color:var(--ink)">Sound guide</span>
+          <div class="seg" role="radiogroup" aria-labelledby="phon-l">
+            <input type="radio" name="phon" id="phon-pinyin" value="pinyin" checked><label for="phon-pinyin">Pinyin</label>
+            <input type="radio" name="phon" id="phon-zhuyin" value="zhuyin"><label for="phon-zhuyin">注音</label>
+            <input type="radio" name="phon" id="phon-none" value="none"><label for="phon-none">None</label>
+          </div></div>
+        <div class="field"><label for="s-length">Story length</label>
+          <select id="s-length"><option value="6">Short (6 pages)</option><option value="8" selected>Medium (8 pages)</option><option value="10">Long (10 pages)</option></select></div>
+      </div>
+      <div class="field"><label for="s-pictures">Pictures</label>
+        <select id="s-pictures"><option value="on" selected>Draw a picture for every page</option><option value="off">Emoji only (faster, free)</option></select></div>
+      <p class="hint">All Chinese text is written in Traditional characters (繁體).</p>
+    </section>
+
+    <section class="panel" data-step="4">
+      <div class="panel-head"><h2>Weekly newsletter</h2></div>
+      <div id="forward-info"></div>
+    </section>
+
+    <section class="panel" data-edit-only>
+      <div class="panel-head"><h2>Account</h2></div>
+      <p class="hint" id="account-line"></p>
+      <div class="row"><button type="button" class="ghost" id="signout" hidden>Sign out</button></div>
+    </section>
+
+    <div class="row">
+      <button type="button" class="ghost" id="profile-back" hidden>Back</button>
+      <button type="button" class="primary" id="profile-save">Save</button>
+      <span class="status" id="profile-status" role="status"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Make a story: newsletter, then review -->
+<div class="sheet" id="maker" hidden role="dialog" aria-modal="true" aria-labelledby="maker-h">
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2 id="maker-h">This week's story</h2>
+      <div class="steps" id="maker-steps"><span>1 Newsletter</span><i class="on"></i><i></i><span>2 Check</span></div>
+      <button type="button" class="ghost" id="maker-close">Close</button>
+    </div>
+
+    <div id="step-lesson" style="display:flex;flex-direction:column;gap:18px">
+      <div class="from-note" id="from-note" hidden></div>
+      <label class="drop" id="drop" for="lesson-file">
+        <span class="big">Add the newsletter PDF</span>
+        <span class="hint">Tap to choose a file, or drop it here. A photo or screenshot works too.</span>
+        <input type="file" id="lesson-file" accept="application/pdf,image/*">
+      </label>
+      <p class="file-note" id="file-note" hidden></p>
+      <details class="raw" id="lesson-box" open>
+        <summary>Lesson text</summary>
+        <textarea id="lesson-text" style="margin-top:8px" placeholder="The newsletter text shows up here after you add a PDF. You can also paste it in, or trim out anything that isn't about the lesson."></textarea>
+      </details>
+      <section class="panel">
+        <div class="panel-head"><h2>Just for this week</h2></div>
+        <div class="field">
+          <span class="hint" id="level-l" style="font-weight:700;color:var(--ink)">Story level</span>
+          <div class="seg level-seg" role="radiogroup" aria-labelledby="level-l">
+            <input type="radio" name="boost" id="boost-m1" value="-1"><label for="boost-m1">Easier</label>
+            <input type="radio" name="boost" id="boost-0" value="0" checked><label for="boost-0">Right for age</label>
+            <input type="radio" name="boost" id="boost-1" value="1"><label for="boost-1">Harder</label>
+            <input type="radio" name="boost" id="boost-2" value="2"><label for="boost-2">Much harder</label>
+          </div>
+          <p class="hint" id="level-hint"></p>
+        </div>
+        <div class="field"><label for="week-include">Anything special this week?</label>
+          <input type="text" id="week-include" placeholder="e.g. her cousin is visiting, we went to the beach"></div>
+        <p class="summary-line" id="settings-summary"></p>
+      </section>
+      <div class="row"><button class="primary" id="generate" type="button">Write the story</button></div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </div>
+
+    <div id="step-review" hidden style="display:flex;flex-direction:column;gap:14px">
+      <p class="lede">Read it through. Change any words directly, or ask for a bigger change at the bottom. Pictures are drawn after you're happy.</p>
+      <div class="review-title"><span class="zh" id="rv-title"></span><span class="hint" id="rv-title-en"></span></div>
+      <div id="rv-pages" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="ask">
+        <div class="asked" id="rv-asked"></div>
+        <div class="row">
+          <input type="text" id="rv-ask" placeholder="Ask for a change, e.g. make Mochi the dog the main character">
+          <button type="button" id="rv-ask-go">Change it</button>
+        </div>
+        <div class="row">
+          <button type="button" class="primary" id="rv-draw">Looks good, draw the pictures</button>
+          <button type="button" class="ghost" id="rv-save">Save as draft</button>
+        </div>
+        <p class="status" id="rv-status" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reader -->
 <div id="reader" hidden role="dialog" aria-modal="true" aria-labelledby="r-title">
   <div class="r-bar">
     <button type="button" id="r-close" aria-label="Close book">✕ Close</button>
@@ -105,7 +209,7 @@
     <button type="button" id="r-phon" aria-pressed="true">拼音</button>
     <button type="button" id="r-en" aria-pressed="true">EN</button>
     <button type="button" id="r-redraw" aria-label="Draw this page's picture again">🎨</button>
-    <button type="button" id="r-say" aria-label="Read this page aloud">🔊 Read</button>
+    <button type="button" id="r-say" aria-label="Read this page aloud">🔊</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="r-nav">
@@ -114,6 +218,8 @@
     <button type="button" id="r-next">Next ›</button>
   </div>
 </div>
+
+<div class="toast" id="toast" hidden role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-btn" hidden></button><div class="bar" id="toast-bar" hidden><i></i></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

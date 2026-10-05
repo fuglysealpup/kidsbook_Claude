@@ -9,6 +9,15 @@
     },
     "api/books.js": {
       "maxDuration": 60
+    },
+    "api/hero.js": {
+      "maxDuration": 120
+    },
+    "api/revise.js": {
+      "maxDuration": 120
+    },
+    "api/inbound.js": {
+      "maxDuration": 60
     }
   }
 }
