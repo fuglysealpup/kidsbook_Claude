@@ -29,7 +29,10 @@ export default async function handler(req, res) {
   const mail = req.body || {};
   const from = String(mail.FromFull?.Email || mail.From || "").toLowerCase().replace(/^.*<|>.*$/g, "").trim();
   // Answer 200 for senders we ignore, so Postmark doesn't keep retrying them.
-  if (!allowedEmails().includes(from)) return res.status(200).json({ ignored: true });
+  if (!allowedEmails().includes(from)) {
+    console.log(`inbound: ignored email from ${from || "(no sender)"}, not on ALLOWED_EMAILS`);
+    return res.status(200).json({ ignored: true, from });
+  }
 
   try {
     const pdfs = (Array.isArray(mail.Attachments) ? mail.Attachments : [])
@@ -42,6 +45,7 @@ export default async function handler(req, res) {
       subject: String(mail.Subject || "Class newsletter").slice(0, 200),
       text: textFrom(mail).slice(0, MAX_TEXT)
     }, pdfs);
+    console.log(`inbound: saved newsletter ${item.id} from ${from} with ${pdfs.length} PDF(s)`);
     res.status(200).json({ ok: true, id: item.id });
   } catch (e) {
     fail(res, e);
