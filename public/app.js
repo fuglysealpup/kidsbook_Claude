@@ -101,7 +101,7 @@ function fillForm(s) {
   $("s-name").value = s.name; $("s-age").value = s.age; $("s-interests").value = s.interests;
   $("s-include").value = s.include; $("s-exclude").value = s.exclude; $("s-length").value = s.length;
   $("s-pictures").value = s.pictures; $("s-passcode").value = s.passcode;
-  $(s.phonetic === "zhuyin" ? "phon-zhuyin" : "phon-pinyin").checked = true;
+  ($("phon-" + s.phonetic) || $("phon-pinyin")).checked = true;
   const b = $("boost-" + String(s.boost).replace("-", "m")); if (b) b.checked = true;
   renderSummary();
 }
@@ -110,7 +110,7 @@ function renderSummary() {
   bits.push(s.name ? `Starring ${s.name}` : "No name set");
   bits.push(`age ${s.age}`);
   if (s.interests) bits.push(`loves ${s.interests}`);
-  bits.push(s.phonetic === "zhuyin" ? "注音" : "pinyin");
+  bits.push({ zhuyin: "注音", none: "no sound guide" }[s.phonetic] || "pinyin");
   bits.push(`${s.length} pages`);
   bits.push(s.pictures === "on" ? "with pictures" : "emoji only");
   $("settings-summary").textContent = bits.join(" · ") + ". Change these under About your child.";
@@ -372,6 +372,7 @@ function renderPage(dir) {
   for (let k = 0; k < n; k++) { const d = document.createElement("i"); if (k === i) d.className = "on"; dots.append(d); }
   $("r-prev").disabled = i === 0; $("r-next").textContent = i === n - 1 ? "The end ✓" : "Next ›";
   $("r-phon").textContent = st.phonetic === "zhuyin" ? "注音" : "拼音";
+  $("r-phon").hidden = st.phonetic === "none";
   $("r-phon").setAttribute("aria-pressed", reader.phon); $("r-en").setAttribute("aria-pressed", reader.en);
   $("r-redraw").hidden = !!st.sample || i > st.pages.length;
   $("r-redraw").disabled = isDrawing;
@@ -440,4 +441,6 @@ $("r-say").addEventListener("click", () => {
 fillForm(settings); renderShelf(); updateGenerate();
 if (!settings.interests && !settings.name) $("settings-details").open = true;
 idb.all().then((all) => { stories = all; renderShelf(); }).catch(() => {});
+// Ask the browser not to clear saved books when space runs low.
+navigator.storage?.persist?.().catch(() => {});
 })();

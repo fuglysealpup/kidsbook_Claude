@@ -37,6 +37,8 @@ const clip = (v, n) => (typeof v === "string" ? v : "").slice(0, n);
 
 export function buildPrompt(s, lesson, withImages) {
   const zhuyin = s.phonetic === "zhuyin";
+  const none = s.phonetic === "none";
+  const sample = (zh, py) => (none ? "" : zhuyin ? zh : py);
   const pages = [6, 8, 10].includes(Number(s.length)) ? Number(s.length) : 8;
   const level = levelFor(s.age, s.boost);
   return `You write picture-book stories for a young child who attends a Mandarin-English bilingual preschool. Turn this week's classroom lesson into a short story the family can read together at home.
@@ -50,7 +52,7 @@ CHILD
 
 LANGUAGE
 - All Chinese must be Traditional characters (繁體中文, as used in Taiwan). Never use Simplified characters.
-- "phon" is the ${zhuyin ? "Zhuyin (注音符號) with tone marks" : "Hanyu Pinyin with tone marks, lowercase"} for the "zh" text: exactly one syllable per Chinese character, in order, separated by single spaces, with NO punctuation. Count carefully so the number of syllables equals the number of Chinese characters. Use neutral tones where natural (${zhuyin ? "子 ˙ㄗ, 謝謝 ㄒㄧㄝˋ ˙ㄒㄧㄝ" : "子 zi, 謝謝 xiè xie"}).
+- ${none ? '"phon" and "titlePhon" are always empty strings ""; the family reads the characters without a sound guide.' : `"phon" is the ${zhuyin ? "Zhuyin (注音符號) with tone marks" : "Hanyu Pinyin with tone marks, lowercase"} for the "zh" text: exactly one syllable per Chinese character, in order, separated by single spaces, with NO punctuation. Count carefully so the number of syllables equals the number of Chinese characters. Use neutral tones where natural (${zhuyin ? "子 ˙ㄗ, 謝謝 ㄒㄧㄝˋ ˙ㄒㄧㄝ" : "子 zi, 謝謝 xiè xie"}).`}
 - "en" is a natural English translation of the page.
 
 READING LEVEL
@@ -67,7 +69,7 @@ STORY
 - "words" lists 4 to 8 key words from the lesson used in the story, each with one emoji.
 
 Reply with only a JSON object in this shape:
-{"title":"小兔子買水果","titlePhon":"${zhuyin ? "ㄒㄧㄠˇ ㄊㄨˋ ˙ㄗ ㄇㄞˇ ㄕㄨㄟˇ ㄍㄨㄛˇ" : "xiǎo tù zi mǎi shuǐ guǒ"}","titleEn":"Little Bunny Buys Fruit","cover":"🐰","coverIllustration":"…","bg":"meadow","style":"…","characters":"…","pages":[{"zh":"…","phon":"…","en":"…","illustration":"…","scene":["🍎","🐰"],"bg":"sky"}],"words":[{"zh":"蘋果","phon":"${zhuyin ? "ㄆㄧㄥˊ ㄍㄨㄛˇ" : "píng guǒ"}","en":"apple","emoji":"🍎"}]}
+{"title":"小兔子買水果","titlePhon":"${sample("ㄒㄧㄠˇ ㄊㄨˋ ˙ㄗ ㄇㄞˇ ㄕㄨㄟˇ ㄍㄨㄛˇ", "xiǎo tù zi mǎi shuǐ guǒ")}","titleEn":"Little Bunny Buys Fruit","cover":"🐰","coverIllustration":"…","bg":"meadow","style":"…","characters":"…","pages":[{"zh":"…","phon":"${none ? "" : "…"}","en":"…","illustration":"…","scene":["🍎","🐰"],"bg":"sky"}],"words":[{"zh":"蘋果","phon":"${sample("ㄆㄧㄥˊ ㄍㄨㄛˇ", "píng guǒ")}","en":"apple","emoji":"🍎"}]}
 
 LESSON
 ${withImages ? "The attached images are pages of the school's weekly newsletter. " : ""}This comes from the school's weekly newsletter. It may be in English, Chinese or both. Ignore admin notices such as dates, fees, events and reminders, and focus on what the children learned.
@@ -113,7 +115,13 @@ export default async function handler(req, res) {
     const text = data?.choices?.[0]?.message?.content || "";
     let parsed;
     try { parsed = JSON.parse(text); } catch { throw Object.assign(new Error("The story came back garbled. Try again."), { status: 502, code: "invalid_json" }); }
-    res.status(200).json({ story: { ...clean(parsed), phonetic: settings.phonetic === "zhuyin" ? "zhuyin" : "pinyin", level: levelFor(settings.age, settings.boost), age: Number(settings.age) || 3 } });
+    const story = clean(parsed);
+    if (settings.phonetic === "none") {
+      story.titlePhon = "";
+      for (const p of story.pages) p.phon = "";
+      for (const w of story.words) w.phon = "";
+    }
+    res.status(200).json({ story: { ...story, phonetic: ["zhuyin", "none"].includes(settings.phonetic) ? settings.phonetic : "pinyin", level: levelFor(settings.age, settings.boost), age: Number(settings.age) || 3 } });
   } catch (e) {
     fail(res, e);
   }
