@@ -660,8 +660,9 @@ async function drawOne(story, idx) {
   drawing.add(key); refreshReader(story, idx);
   try {
     const { image } = await api("/api/image", {
-      scene: sceneFor(story, idx), style: story.style, characters: story.characters, age: story.age,
-      bookId: story.id, idx, heroSheet: story.hero?.sheet, heroInScene: idx === 0 ? true : story.pages[idx - 1].hero !== false
+      scene: sceneFor(story, idx), style: story.style, characters: story.characters, supporting: story.supporting, age: story.age,
+      bookId: story.id, idx, heroSheet: story.hero?.sheet, heroInScene: idx === 0 ? true : story.pages[idx - 1].hero !== false,
+      castSheet: story.castSheet
     });
     if (idx === 0) story.coverImage = image; else story.pages[idx - 1].image = image;
     await keep(story);
@@ -674,9 +675,22 @@ async function drawOne(story, idx) {
     if (idx === 0) renderShelf();
   }
 }
+// The book's other recurring characters get one reference sheet, drawn before the pages that use it.
+async function drawCast(story) {
+  if (story.castSheet || !story.supporting) return;
+  try {
+    const { image } = await api("/api/image", {
+      kind: "cast", supporting: story.supporting, style: story.style, age: story.age, bookId: story.id
+    });
+    story.castSheet = image;
+    await keep(story);
+  } catch {}  // the pages still draw without it
+}
 async function drawAll(story) {
   const todo = [0, ...story.pages.map((_, i) => i + 1)].filter((i) => !(i === 0 ? story.coverImage : story.pages[i - 1].image));
   if (!todo.length) return;
+  if (!story.castSheet && story.supporting) toast("Sketching this book's characters first…", { ms: 0 });
+  await drawCast(story);
   let done = 0, failed = 0;
   const total = todo.length;
   const tick = () => toast(`Drawing pictures: ${done} of ${total} done. Keep reading while they finish.`, { ms: 0, progress: done / total });
@@ -795,6 +809,7 @@ $("r-phon").addEventListener("click", () => { reader.phon = !reader.phon; saveRe
 $("r-en").addEventListener("click", () => { reader.en = !reader.en; saveReader(); renderPage(); });
 $("r-redraw").addEventListener("click", async () => {
   const st = reader.story;
+  await drawCast(st);
   if (!(await drawOne(st, reader.i))) toast(`That picture didn't come out: ${errorCopy(lastError.get(st.id))}`, { ms: 7000 });
 });
 document.addEventListener("keydown", (e) => {
