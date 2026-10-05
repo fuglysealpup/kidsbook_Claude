@@ -1,11 +1,12 @@
 import { checkPasscode, requirePost, openai, fail } from "./_lib.js";
+import { cloudOn, safeId, putPicture } from "./_blob.js";
 
 const MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 const QUALITY = process.env.OPENAI_IMAGE_QUALITY || "medium";
 
 export default async function handler(req, res) {
   if (!requirePost(req, res) || !checkPasscode(req, res)) return;
-  const { scene, style, characters, age } = req.body || {};
+  const { scene, style, characters, age, bookId, idx } = req.body || {};
   const years = Math.min(8, Math.max(2, Number(age) || 3));
   if (typeof scene !== "string" || !scene.trim()) return res.status(400).json({ error: "bad_request", message: "Missing scene." });
 
@@ -24,6 +25,10 @@ export default async function handler(req, res) {
     });
     const b64 = data?.data?.[0]?.b64_json;
     if (!b64) throw Object.assign(new Error("No image came back."), { status: 502, code: "no_image" });
+    const page = Math.max(0, Math.min(99, Number(idx) || 0));
+    if (cloudOn() && safeId(bookId)) {
+      return res.status(200).json({ image: await putPicture(bookId, page, Buffer.from(b64, "base64"), "image/webp") });
+    }
     res.status(200).json({ image: `data:image/webp;base64,${b64}` });
   } catch (e) {
     fail(res, e);

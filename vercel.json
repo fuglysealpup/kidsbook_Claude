@@ -1,7 +1,14 @@
 {
   "outputDirectory": "public",
   "functions": {
-    "api/story.js": { "maxDuration": 120 },
-    "api/image.js": { "maxDuration": 120 }
+    "api/story.js": {
+      "maxDuration": 120
+    },
+    "api/image.js": {
+      "maxDuration": 120
+    },
+    "api/books.js": {
+      "maxDuration": 60
+    }
   }
 }

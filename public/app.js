@@ -66,6 +66,9 @@ let stories = [];
 let images = [];        // newsletter pages as pictures, when the PDF has no readable text
 let busy = false;
 const drawing = new Set();   // "storyId:index" currently being drawn (index 0 = cover)
+const lastError = new Map();
+let cloud = false;           // true when the server has cloud storage connected
+const saving = new Map();    // storyId -> { again } while a cloud save is running
 
 /* ---------- server calls ---------- */
 async function api(path, body) {
@@ -123,6 +126,7 @@ document.querySelectorAll('input[name="boost"]').forEach((r) => r.addEventListen
 $("s-age").addEventListener("change", () => { settings.age = $("s-age").value; renderSummary(); });
 $("save-settings").addEventListener("click", () => {
   settings = readForm(); local.set("sw-settings", settings); renderSummary();
+  if (!cloud) syncCloud();
   $("settings-status").textContent = "Saved";
   setTimeout(() => { $("settings-status").textContent = ""; }, 2000);
 });
@@ -206,7 +210,7 @@ $("generate").addEventListener("click", async () => {
     const { story: s } = await api("/api/story", { settings, lesson: $("lesson-text").value.trim(), images });
     story = { ...s, id: "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), createdAt: new Date().toISOString() };
     stories.unshift(story);
-    await idb.put(story).catch(() => {});
+    await keep(story);
     renderShelf(); openBook(story);
   } catch (e) {
     setStatus(errorCopy(e), true); setProgress(null);
@@ -230,12 +234,12 @@ async function drawOne(story, idx) {
   if (drawing.has(key)) return true;
   drawing.add(key); refreshReader(story, idx);
   try {
-    const { image } = await api("/api/image", { scene: sceneFor(story, idx), style: story.style, characters: story.characters, age: story.age });
+    const { image } = await api("/api/image", { scene: sceneFor(story, idx), style: story.style, characters: story.characters, age: story.age, bookId: story.id, idx });
     if (idx === 0) story.coverImage = image; else story.pages[idx - 1].image = image;
-    await idb.put(story).catch(() => {});
+    await keep(story);
     return true;
   } catch (e) {
-    story._lastError = e;
+    lastError.set(story.id, e);
     return false;
   } finally {
     drawing.delete(key); refreshReader(story, idx);
@@ -261,8 +265,55 @@ async function drawAll(story) {
   };
   await Promise.all(Array.from({ length: Math.min(DRAW_AT_ONCE, total) }, worker));
   setProgress(null);
-  if (failed) setStatus(`${failed} picture${failed > 1 ? "s" : ""} didn't come out (${errorCopy(story._lastError)}). Open the book and tap 🎨 on a page to try again.`, true);
+  if (failed) setStatus(`${failed} picture${failed > 1 ? "s" : ""} didn't come out (${errorCopy(lastError.get(story.id))}). Open the book and tap 🎨 on a page to try again.`, true);
   else setStatus("Done! All the pictures are in.");
+}
+
+/* ---------- saving: this device always, the cloud when it's connected ---------- */
+async function keep(story) {
+  await idb.put(story).catch(() => {});
+  cloudSave(story);
+}
+function cloudSave(story) {
+  if (!cloud || story.sample) return;
+  const running = saving.get(story.id);
+  if (running) { running.again = true; return; }   // save once more after the current one finishes
+  const st = { again: false };
+  saving.set(story.id, st);
+  (async () => {
+    do {
+      st.again = false;
+      try {
+        const { story: saved } = await api("/api/books", { action: "save", story });
+        // Pictures that were stored inside the book move to their own cloud files; use those links from now on.
+        if (saved) {
+          if (/^data:/.test(story.coverImage || "") && /^https:/.test(saved.coverImage || "")) story.coverImage = saved.coverImage;
+          story.pages.forEach((p, i) => { const sp = saved.pages?.[i]; if (/^data:/.test(p.image || "") && /^https:/.test(sp?.image || "")) p.image = sp.image; });
+          await idb.put(story).catch(() => {});
+        }
+      } catch (e) {
+        setStatus(`This book is saved on this device but not in the cloud yet: ${errorCopy(e)}`, true);
+        break;
+      }
+    } while (st.again);
+    saving.delete(story.id);
+  })();
+}
+async function syncCloud() {
+  let res;
+  try { res = await api("/api/books", { action: "list" }); }
+  catch (e) {
+    if (e?.status === 401) $("shelf-note").textContent = "Enter the app passcode under About your child to see books saved in the cloud.";
+    return;
+  }
+  if (!res.cloud) return;
+  cloud = true;
+  const inCloud = new Map(res.stories.map((s) => [s.id, s]));
+  const localOnly = stories.filter((s) => !inCloud.has(s.id));
+  for (const s of res.stories) await idb.put(s).catch(() => {});
+  stories = [...res.stories, ...localOnly].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  renderShelf();
+  for (const s of localOnly) cloudSave(s);   // books made before cloud saving move up
 }
 
 /* ---------- bookshelf ---------- */
@@ -290,14 +341,17 @@ function renderShelf() {
       del.addEventListener("click", async () => {
         if (!armed) { del.textContent = "Tap again to delete"; del.classList.add("danger"); armed = setTimeout(() => { armed = null; del.textContent = "Delete"; del.classList.remove("danger"); }, 3000); return; }
         clearTimeout(armed);
-        try { await idb.del(st.id); stories = stories.filter((x) => x.id !== st.id); renderShelf(); }
+        try {
+          if (cloud) await api("/api/books", { action: "delete", id: st.id });
+          await idb.del(st.id); stories = stories.filter((x) => x.id !== st.id); renderShelf();
+        }
         catch { del.textContent = "Couldn't delete"; }
       });
       wrap.append(del);
     }
     shelf.append(wrap);
   }
-  $("shelf-count").textContent = stories.length ? `${stories.length} stor${stories.length === 1 ? "y" : "ies"}` : "";
+  $("shelf-count").textContent = (stories.length ? `${stories.length} stor${stories.length === 1 ? "y" : "ies"} · ` : "") + (cloud ? "saved in the cloud" : "saved on this device");
   $("shelf-note").textContent = stories.length ? "" : "Your stories will land here. Open the example to see how a book reads.";
 }
 
@@ -401,7 +455,7 @@ $("r-en").addEventListener("click", () => { reader.en = !reader.en; saveReader()
 $("r-redraw").addEventListener("click", async () => {
   const st = reader.story, i = reader.i;
   const ok = await drawOne(st, i);
-  if (!ok) setStatus(`That picture didn't come out: ${errorCopy(st._lastError)}`, true);
+  if (!ok) setStatus(`That picture didn't come out: ${errorCopy(lastError.get(st.id))}`, true);
 });
 document.addEventListener("keydown", (e) => {
   if ($("reader").hidden) return;
@@ -440,7 +494,7 @@ $("r-say").addEventListener("click", () => {
 /* ---------- boot ---------- */
 fillForm(settings); renderShelf(); updateGenerate();
 if (!settings.interests && !settings.name) $("settings-details").open = true;
-idb.all().then((all) => { stories = all; renderShelf(); }).catch(() => {});
+idb.all().then((all) => { stories = all; renderShelf(); }).catch(() => {}).then(syncCloud);
 // Ask the browser not to clear saved books when space runs low.
 navigator.storage?.persist?.().catch(() => {});
 })();

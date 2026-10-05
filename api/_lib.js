@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 
-const OPENAI = "https://api.openai.com/v1";
+const OPENAI = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
 
 export function checkPasscode(req, res) {
   const want = process.env.APP_PASSCODE;
