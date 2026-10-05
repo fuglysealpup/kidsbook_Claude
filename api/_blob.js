@@ -1,6 +1,7 @@
 import { put, list, del } from "@vercel/blob";
 
-// Everything lives in a Vercel Blob store when one is connected (BLOB_READ_WRITE_TOKEN is set):
+// Everything lives in a Vercel Blob store when one is connected. Older stores set BLOB_READ_WRITE_TOKEN;
+// newer ones set BLOB_STORE_ID and sign in with the deployment's OIDC token, which @vercel/blob picks up itself.
 //   books/<id>/story-<random>.json      the book
 //   books/<id>/<page>-<random>.webp     one file per picture
 //   profile/profile-<random>.json       the child's settings and hero
@@ -8,7 +9,7 @@ import { put, list, del } from "@vercel/blob";
 //   inbox/<id>/item-<random>.json       a forwarded newsletter
 //   inbox/<id>/<name>-<random>.pdf      its attachments
 // Every save writes a new file name, so a browser or CDN never serves an old copy.
-export const cloudOn = () => !!process.env.BLOB_READ_WRITE_TOKEN;
+export const cloudOn = () => !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 export const safeId = (id) => (/^[a-z0-9]{4,40}$/i.test(String(id || "")) ? String(id) : null);
 export const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
